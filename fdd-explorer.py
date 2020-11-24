@@ -201,7 +201,7 @@ def app():
 
     inputs = column(year_slider)
 
-    title = Div(text="<H1>CLIMATE PRIMING EXPLORER<H1>", width=1000)
+    title = Div(text="<H1>FREEZING DEGREE-DAY EXPLORER<H1>", width=1000)
     
     curdoc().add_root(
         layout([
@@ -211,7 +211,7 @@ def app():
         ]) 
         
     )
-    curdoc().title = "Climate Priming Explorer"
+    curdoc().title = "Freezing Degree-day Priming Explorer"
 
     
 

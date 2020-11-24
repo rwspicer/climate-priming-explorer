@@ -4,175 +4,94 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from bokeh.io import curdoc
-from bokeh.layouts import column, row, layout
+from bokeh.layouts import column, row, layout, Spacer
 from bokeh.plotting import figure, output_file, show
 from bokeh import palettes
 from bokeh.transform import linear_cmap
 
-from bokeh.models import TextInput, ColumnDataSource, FileInput, Div, Dropdown, Slider,ColorBar, LinearColorMapper
+from bokeh.models import TextInput, ColumnDataSource, FileInput, Div, Dropdown, Slider,ColorBar, LinearColorMapper, Title
 
 
 ## TEST DATA setup
-path = "/Volumes/scarif/data/V2/datasets/derived/fdd_ACP_CRU_v3/tiff/"
-load_params = {
-    "method": "tiff",
-    "directory": path
-}
-create_params = {
-    'start_timestep':1901,
-    'raster_metadata': tools.get_raster_metadata(os.path.join(path, "freezing_degree-day_1901.tif"))
-}
+# path = "/Volumes/scarif/data/V2/datasets/derived/fdd_ACP_CRU_v3/tiff/"
+# load_params = {
+#     "method": "tiff",
+#     "directory": path
+# }
+# create_params = {
+#     'start_timestep':1901,
+#     'raster_metadata': tools.get_raster_metadata(os.path.join(path, "freezing_degree-day_1901.tif"))
+# }
 
-test_data = tools.load_and_create(load_params, create_params)
+# test_data = tools.load_and_create(load_params, create_params)
 
-UTQ = test_data.zoom_to((70.9, -156), location_format="WGS84")
-PRU = test_data.zoom_to((70, -151), location_format="WGS84")
+# UTQ = test_data.zoom_to((70.9, -156), location_format="WGS84")
+# PRU = test_data.zoom_to((70, -151), location_format="WGS84")
 
-print (UTQ.config['grid_shape'])
-print (PRU.config['grid_shape'])
+# print (UTQ.config['grid_shape'])
+# print (PRU.config['grid_shape'])
 
 
 ## TEST DATA setup
 
-WIDTH = 200
-
-palette_opts = {
-    "viridis": palettes.Viridis[256],
-    "magma": palettes.Magma[256]
-}
-
-def create_data(multigrid, year):
-
-    # # print('a')
-    # to_x_geo = lambda x, y, gt: gt[0] + (x + .5)*gt[1] + (y + .5)*gt[2]
-    # to_y_geo = lambda x, y, gt: gt[3] + (x + .5)*gt[4] + (y + .5)*gt[5]
-    # md =  multigrid.config['raster metadata']
-    init = multigrid[year]
-
-    # in_crs = CRS.from_wkt(md.projection)
-    # gps = CRS.from_epsg(4326)
-    # transformer = Transformer.from_crs(in_crs, gps)
-    # # print('b')
-    # x = np.zeros(init.shape)
-    # y = np.zeros(init.shape)
-    # x[:] = range(init.shape[1])
-    # y.T[:] = range(init.shape[0])
-
-    # # print('c')
-
-    # x_geo = to_x_geo(x,y,md.transform)
-    # y_geo = to_y_geo(x,y,md.transform)
-    # print('d')
-    data = dict(
-        image=[init[::-1]], 
-        # x_geo = [x_geo[::-1]],
-        # y_geo = [y_geo[::-1]],
-        # lat = [transformer.transform(x_geo,y_geo)[0] [::-1]],
-        # long = [transformer.transform(x_geo,y_geo)[1] [::-1]],
-        # raster_metadata = [md]
-    )
-    # print('e')
-    return data
-
-def create_figure(data):
-    TOOLTIPS = [
-        ("(x,y)", "($x, $y)"),
-        # ("(x map, y map)", "(@x_geo{0,0.000}, @y_geo{0,0.000})"),
-        # ("(lat, long)", "(@lat{0,0.000}, @long{0,0.000})"),
-        ("value", "@image{0,0.000}")
-    ]
-    img_shape = data.data['image'][0].shape
-    p = figure(
-        tooltips= TOOLTIPS,
-        plot_height = img_shape[0] * WIDTH*2//img_shape[1],
-        plot_width = WIDTH *2 ,
-        tools=[],
-        title="Utqiaġvik and Point Barrow"
-        )
-
-    p.toolbar.logo = None
-    p.toolbar_location = None
-    p.x_range.range_padding = p.y_range.range_padding = 0
-    # p.sizing_mode = 'scale_height'
-    # must give a vector of image data for image parameter
-
-    cmapper = LinearColorMapper(palettes.Viridis[256], low=-6000, high=-3500, nan_color='white')
-
-    p.image(
-        image='image', x=0, y=0, dw=10, dh=10, 
-        color_mapper=cmapper,
-        # palette=palettes.linear_palette(palette_opts[data.data['current_palette'][0]],data.data['current_colors'][0] ), 
-        level="image",
-        source=data,
-    )
-    # p.grid.grid_line_width = 0.5
-    p.xgrid.grid_line_color = None
-    p.ygrid.grid_line_color = None
-    p.axis.visible = False
-
-    return p
 
 
-def create_area_average_data(multigrid):
 
-    average = []
-    for yr in range(multigrid.config['num_timesteps']):
-        # print(multigrid.grids[yr])
-        average.append(np.nanmean(multigrid.grids[yr]))
-    return average
+
+
+
+
+
+
+
+
+import plots, constants, maps, colors
+import data_sources
+
+# from sites import LOCATIONS
 
 
 def app():
 
-    start_year = UTQ.config['start_timestep']
-    end_year = start_year + UTQ.config['num_timesteps']
-    years = range(start_year,end_year)
+    sites = data_sources.GLOBAL_SITE_DATA
+
+    current_region = "Utqiaġvik"
     
-    current_palette = 'viridis'
-    current_colors = 256
-    display_year = start_year
-    # print(display_year)
 
-    display_region = ColumnDataSource()
-    display_region.data = create_data(UTQ, display_year )
-    display_region.data['current_palette'] = [current_palette]
-    display_region.data['current_colors'] = [current_colors]
-    display_region.data['current_year'] = [display_year ]
-    cp_map = create_figure(display_region)
+    start_year = sites[current_region]['data']['cp'].config['start_timestep']
+    end_year = start_year + sites[current_region]['data']['cp'].config['num_timesteps']
+    
 
-    average = create_area_average_data(UTQ)
-    # print(average)
+    current_display = ColumnDataSource()
+    current_display.data = data_sources.create_data(sites[current_region], start_year + 1)
 
-
-    average_plot = figure(
-        plot_width=WIDTH*4, plot_height=WIDTH, 
-        x_range=(1900, 2016), y_range=(-6000, -3500), tools=[],
-        title="Yearly Average for Area"
-    )
-
-    ## 1901-1950 average_line
-    average_plot.ray(x=[start_year-1], y=[np.nanmean(average[:1950-start_year])], length=0, angle=0, line_width=3, alpha=0.5, color="blue",legend_label="1901-1950 regional average")
-    # average_plot.ray(x=[start_year], y=[np.nanmean(average[:1950-start_year])], length=0, angle=np.pi, line_width=3,alpha=0.5, color="blue", legend_label="1901-1950 regional average")
-
+    
 
     timeseries = ColumnDataSource()
-    color_mapper = linear_cmap(field_name='average',palette=palettes.Viridis[256], low=-6000, high=-3500)
-    timeseries.data = {"years": years, "average": average}
-    average_plot.circle('years', 'average', size=10, color=color_mapper , alpha=0.75, source = timeseries)
+    timeseries.data = {
+        "years": range(start_year,end_year), 
+        "average": data_sources.create_area_average_data(
+            sites[current_region]['data']['cp']
+        )
+    }
+
+    current_year = current_display.data['current_year'][0]
+    display_average = timeseries.data['average'][current_year  -start_year]
+    current_display.data['current_average'] = [display_average]
+    current_display.data['region'] = [current_region ]
     
 
-    display_average = average[display_year-start_year]
+    cp_map = maps.create_cp_map(current_display)
 
-    display_region.data['current_average'] = [display_average ]
-    average_plot.circle(x='current_year', y='current_average', size=20, color="red", alpha=.5, source=display_region )
 
-    average_plot.legend.location = "top_left"
-    average_plot.legend.click_policy="hide"
+
+
+    average_plot = plots.create_average_plot(current_display, timeseries, start_year)
 
     hidden_plot = figure(
-        plot_width=100, plot_height=WIDTH*2, 
+        plot_width=100, plot_height=constants.WIDTH*2, 
         tools=[],
-        title = "Degree-days",title_location="right",
+        title = "CLIMATE PRIMING VAL",title_location="right",
         toolbar_location=None, min_border=0, 
         outline_line_color=None
     )
@@ -181,32 +100,131 @@ def app():
     hidden_plot.title.align="center"
     hidden_plot.title.text_font_size = '12pt'
 
+    color_mapper = linear_cmap(
+        field_name='average',palette=colors.blue_red, 
+        low=constants.CP_MIN, high=constants.CP_MAX
+    )
     color_bar = ColorBar(color_mapper=color_mapper['transform'], width=8,  location=(0,0))
     hidden_plot.add_layout(color_bar, 'right')
     
 
+    current_year = current_display.data['current_year'][0]
+    last_year = str(current_year - 1)
+    current_year = str(current_year)
+    tdd_last_map = maps.create_met_map(
+        current_display, "tdd_last", 1,
+        palettes.Reds256[::-1], constants.TDD_MIN, constants.TDD_MAX
+    )
+    tdd_last_map.add_layout(Title(text=last_year, name='title'), 'above')
+    tdd_last_map.add_layout(Title(text="Thawing Degree Days "), 'above')
+
+    fdd_map = maps.create_met_map(current_display, "fdd", 1,
+        palettes.Blues256, constants.FDD_MIN, constants.FDD_MAX
+    )
+    fdd_map.add_layout(Title(text=last_year + '-' + current_year, name='title'), 'above')
+    fdd_map.add_layout(Title(text="Freezing Degree Days "), 'above')
+
+    tdd_map = maps.create_met_map(
+        current_display, "tdd", 0,
+        palettes.Reds256[::-1], constants.TDD_MIN, constants.TDD_MAX
+    )
+    tdd_map.add_layout(Title(text=current_year, name='title'), 'above')
+    tdd_map.add_layout(Title(text="Thawing Degree Days "), 'above')
+
+    ewp_map = maps.create_met_map(
+        current_display, "ewp", 1,
+        palettes.Greens256[::-1], constants.EWP_MIN, constants.EWP_MAX
+    )
+    ewp_map.add_layout(Title(text="Oct "+ last_year+" - Nov " + last_year, name='title'), 'above')
+    ewp_map.add_layout(Title(text="Early Winter Precipitation [mm]"), 'above')
+
+    fwp_map = maps.create_met_map(
+        current_display, "fwp", 1,
+        palettes.Greens256[::-1], constants.FWP_MIN, constants.FWP_MAX
+    )
+    fwp_map.add_layout(Title(text="Oct "+ last_year +" - Mar " + current_year, name='title'), 'above')
+    fwp_map.add_layout(Title(text="Total Winter Precipitation [mm]"), 'above')
+
+    # fwp_map.add_layout() Div(text="<div>Total winter precipitation<div></div>  + "</div>")
+
+
+    options = [(sites[r]['name'], r) for r in sites]
+    region_dropdown = Dropdown(label="region", menu=options)
 
     year_slider = Slider(
-        start=start_year, end=end_year, value=display_year, step=1, title="Year"
+        start=start_year+1, end=end_year - 1, 
+        value=current_display.data['current_year'][0], step=1, title="Year"
     )
+
     def change_display_year(attrname, old, new):
+
+        current_region = current_display.data['region'][0]
        
-        display_region.data['image']  = [UTQ[int(new)][::-1]]
-        display_average = average[new-start_year]
-        display_region.data['current_average'] = [display_average ]
-        display_region.data['current_year'] = [new]
+        current_display.data['cp']  = [sites[current_region]['data']['cp'][int(new)][::-1]]
+        display_average = timeseries.data['average'][new-start_year]
+        current_display.data['current_average'] = [display_average ]
+        current_display.data['current_year'] = [new]
+        
+        current_display.data['tdd_last'] = [sites[current_region]['data']['tdd'][new - 1][::-1]]
+        current_display.data['tdd'] = [sites[current_region]['data']['tdd'][new ][::-1]]
+        current_display.data['fdd'] = [sites[current_region]['data']['fdd'][new  - 1][::-1]]
+        current_display.data['ewp'] = [sites[current_region]['data']['ewp'][new  - 1][::-1]]
+        current_display.data['fwp'] = [sites[current_region]['data']['fwp'][new  - 1][::-1]]
+
+        last_year = str(new - 1)
+        current_year = str(new)
+
+        tdd_last_map.select(name="title").text = last_year
+        fdd_map.select(name="title").text = last_year + '-' + current_year
+        tdd_map.select(name="title").text = current_year
+        ewp_map.select(name="title").text = "Oct "+ last_year+" - Nov " + last_year
+        fwp_map.select(name="title").text = "Oct "+ last_year +" - Mar " + current_year
+
+        
+
+    def change_region(event):
+       
+        current_region = event.item
+        current_display.data['region'] = [current_region]
+
+        new = current_display.data['current_year'][0]
+        
+        current_display.data['cp']  = [sites[current_region]['data']['cp'][int(new)][::-1]]
+        
+
+        timeseries.data['average'] = data_sources.create_area_average_data(
+            sites[current_region]['data']['cp']
+        )
+
+        display_average = timeseries.data['average'][new-start_year]
+        current_display.data['current_average'] = [display_average ]
+        current_display.data['current_year'] = [new]
+        
+        current_display.data['tdd_last'] = [sites[current_region]['data']['tdd'][new - 1][::-1]]
+        current_display.data['tdd'] = [sites[current_region]['data']['tdd'][new ][::-1]]
+        current_display.data['fdd'] = [sites[current_region]['data']['fdd'][new  - 1][::-1]]
+        current_display.data['ewp'] = [sites[current_region]['data']['ewp'][new  - 1][::-1]]
+        current_display.data['fwp'] = [sites[current_region]['data']['fwp'][new  - 1][::-1]]
+        cp_map.title.text = sites[current_region]['name']
+
+   
 
        
     year_slider.on_change('value_throttled', change_display_year)
+    region_dropdown.on_click(change_region)
 
-    inputs = column(year_slider)
+    inputs = column([region_dropdown, year_slider])
 
     title = Div(text="<H1>CLIMATE PRIMING EXPLORER<H1>", width=1000)
-    
+    from copy import deepcopy
+    dd_row = row([tdd_last_map, fdd_map, tdd_map])
+    precip_row = row( [Spacer(width=100, height = 100), ewp_map, fwp_map])
+    met_col = column(dd_row, precip_row)
+
     curdoc().add_root(
         layout([
             [title],
-            [inputs, cp_map, hidden_plot],
+            [inputs, cp_map, hidden_plot, met_col  ] ,
             [average_plot]
         ]) 
         
