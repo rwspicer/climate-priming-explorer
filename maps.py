@@ -12,7 +12,7 @@ def create_cp_map(data):
         ("(x,y)", "($x, $y)"),
         # ("(x map, y map)", "(@x_geo{0,0.000}, @y_geo{0,0.000})"),
         # ("(lat, long)", "(@lat{0,0.000}, @long{0,0.000})"),
-        ("value", "@cp{0,0.000}")
+        ("value", "@cp_vals{0,0.000}")
     ]
     img_shape = data.data['cp'][0].shape
     p = figure(
@@ -32,7 +32,8 @@ def create_cp_map(data):
     cmapper = LinearColorMapper(
         colors.blue_red , 
         low=constants.CP_MIN, high=constants.CP_MAX, 
-        nan_color='white'
+        nan_color='white',
+        low_color="gray"
     )
 
     p.image(

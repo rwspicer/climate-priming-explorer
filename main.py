@@ -9,9 +9,9 @@ from bokeh.plotting import figure, output_file, show
 from bokeh import palettes
 from bokeh.transform import linear_cmap
 
-from bokeh.models import TextInput, ColumnDataSource, FileInput, Div, Dropdown, Slider,ColorBar, LinearColorMapper, Title
+from bokeh.models import TextInput, ColumnDataSource, FileInput, Div, Dropdown, Slider,ColorBar, LinearColorMapper, Title, Toggle
 
-
+from copy import deepcopy
 ## TEST DATA setup
 # path = "/Volumes/scarif/data/V2/datasets/derived/fdd_ACP_CRU_v3/tiff/"
 # load_params = {
@@ -51,9 +51,18 @@ import data_sources
 # from sites import LOCATIONS
 
 
+def refresh_displat():
+    pass
+
+
 def app():
 
     sites = data_sources.GLOBAL_SITE_DATA
+
+    cp_threshold_toggle = False
+    cp_threshold = 0
+
+    predisp_toggle = False
 
     current_region = "Utqiaġvik"
     
@@ -65,7 +74,7 @@ def app():
     current_display = ColumnDataSource()
     current_display.data = data_sources.create_data(sites[current_region], start_year + 1)
 
-    
+    description = Div(text="<h2>Notes for area:</h2><p>"+ sites[current_region]['description'] + "</p>")
 
     timeseries = ColumnDataSource()
     timeseries.data = {
@@ -80,10 +89,14 @@ def app():
     current_display.data['current_average'] = [display_average]
     current_display.data['region'] = [current_region ]
     
+    current_display.data['cp_threshold_toggle'] = [cp_threshold_toggle]
+    current_display.data['cp_threshold'] = [cp_threshold]
+    current_display.data['predisp_toggle'] = [predisp_toggle]
+    
 
     cp_map = maps.create_cp_map(current_display)
 
-
+   
 
 
     average_plot = plots.create_average_plot(current_display, timeseries, start_year)
@@ -156,23 +169,56 @@ def app():
         value=current_display.data['current_year'][0], step=1, title="Year"
     )
 
+    threshold_toggle = Toggle(label="climate priming threshold off")
+    threshold_slider = Slider(
+        start=-50, end=50, 
+        step = .5,
+        value=cp_threshold,
+        title="Climate Priming Threshold"
+    )
+
+    predisp_toggle_button = Toggle(label="predisposition model overlay off")
+
     def change_display_year(attrname, old, new):
 
         current_region = current_display.data['region'][0]
+
+        current_year = int(new)
+
+        cp_threshold_toggle = current_display.data['cp_threshold_toggle'][0]
+        cp_threshold= current_display.data['cp_threshold'][0]
+
+        predisp_toggle = current_display.data['predisp_toggle'][0]
+
+        multiplier = 1
+        if predisp_toggle: 
+            multiplier = sites[current_region]['predisp_model']
        
-        current_display.data['cp']  = [sites[current_region]['data']['cp'][int(new)][::-1]]
+        if cp_threshold_toggle:
+            th_map =  deepcopy(sites[current_region]['data']['cp'][current_year][::-1]) * multiplier
+            th_map[th_map >= cp_threshold] = 100 
+            th_map[th_map < cp_threshold] = -100
+            th_map[np.isinf(th_map)] = constants.CP_MIN - 10
+            current_display.data['cp'] = [th_map]
+        else:
+            map_ = sites[current_region]['data']['cp'][current_year][::-1] * multiplier
+            map_[np.isinf(map_)] = constants.CP_MIN - 10
+            current_display.data['cp'] = [map_]
+
+        current_display.data['cp_vals'] = [sites[current_region]['data']['cp'][current_year][::-1] * multiplier]
+
         display_average = timeseries.data['average'][new-start_year]
         current_display.data['current_average'] = [display_average ]
-        current_display.data['current_year'] = [new]
+        current_display.data['current_year'] = [current_year]
         
-        current_display.data['tdd_last'] = [sites[current_region]['data']['tdd'][new - 1][::-1]]
-        current_display.data['tdd'] = [sites[current_region]['data']['tdd'][new ][::-1]]
-        current_display.data['fdd'] = [sites[current_region]['data']['fdd'][new  - 1][::-1]]
-        current_display.data['ewp'] = [sites[current_region]['data']['ewp'][new  - 1][::-1]]
-        current_display.data['fwp'] = [sites[current_region]['data']['fwp'][new  - 1][::-1]]
+        current_display.data['tdd_last'] = [sites[current_region]['data']['tdd'][current_year - 1][::-1]]
+        current_display.data['tdd'] = [sites[current_region]['data']['tdd'][current_year ][::-1]]
+        current_display.data['fdd'] = [sites[current_region]['data']['fdd'][current_year  - 1][::-1]]
+        current_display.data['ewp'] = [sites[current_region]['data']['ewp'][current_year  - 1][::-1]]
+        current_display.data['fwp'] = [sites[current_region]['data']['fwp'][current_year  - 1][::-1]]
 
-        last_year = str(new - 1)
-        current_year = str(new)
+        last_year = str(current_year - 1)
+        current_year = str(current_year)
 
         tdd_last_map.select(name="title").text = last_year
         fdd_map.select(name="title").text = last_year + '-' + current_year
@@ -180,40 +226,157 @@ def app():
         ewp_map.select(name="title").text = "Oct "+ last_year+" - Nov " + last_year
         fwp_map.select(name="title").text = "Oct "+ last_year +" - Mar " + current_year
 
-        
 
     def change_region(event):
        
         current_region = event.item
         current_display.data['region'] = [current_region]
 
-        new = current_display.data['current_year'][0]
+        current_year = current_display.data['current_year'][0]
         
-        current_display.data['cp']  = [sites[current_region]['data']['cp'][int(new)][::-1]]
+        cp_threshold_toggle = current_display.data['cp_threshold_toggle'][0]
+        cp_threshold= current_display.data['cp_threshold'][0]
+
+        predisp_toggle = current_display.data['predisp_toggle'][0]
+
+        multiplier = 1
+        if predisp_toggle: 
+            multiplier = sites[current_region]['predisp_model']
+
+        if cp_threshold_toggle:
+            th_map = deepcopy(sites[current_region]['data']['cp'][current_year][::-1]) * multiplier
+            th_map[th_map >= cp_threshold] = 100 
+            th_map[th_map < cp_threshold] = -100
+            th_map[np.isinf(th_map)] = constants.CP_MIN - 10
+            current_display.data['cp'] = [th_map]
+        else:
+            map_ = sites[current_region]['data']['cp'][current_year][::-1] * multiplier
+            map_[np.isinf(map_)] = constants.CP_MIN - 10
+            current_display.data['cp'] = [map_]
         
+        current_display.data['cp_vals'] = [sites[current_region]['data']['cp'][current_year][::-1] * multiplier]
+
 
         timeseries.data['average'] = data_sources.create_area_average_data(
             sites[current_region]['data']['cp']
         )
 
-        display_average = timeseries.data['average'][new-start_year]
+        display_average = timeseries.data['average'][current_year-start_year]
         current_display.data['current_average'] = [display_average ]
-        current_display.data['current_year'] = [new]
+        current_display.data['current_year'] = [current_year]
         
-        current_display.data['tdd_last'] = [sites[current_region]['data']['tdd'][new - 1][::-1]]
-        current_display.data['tdd'] = [sites[current_region]['data']['tdd'][new ][::-1]]
-        current_display.data['fdd'] = [sites[current_region]['data']['fdd'][new  - 1][::-1]]
-        current_display.data['ewp'] = [sites[current_region]['data']['ewp'][new  - 1][::-1]]
-        current_display.data['fwp'] = [sites[current_region]['data']['fwp'][new  - 1][::-1]]
+        current_display.data['tdd_last'] = [sites[current_region]['data']['tdd'][current_year - 1][::-1]]
+        current_display.data['tdd'] = [sites[current_region]['data']['tdd'][current_year ][::-1]]
+        current_display.data['fdd'] = [sites[current_region]['data']['fdd'][current_year  - 1][::-1]]
+        current_display.data['ewp'] = [sites[current_region]['data']['ewp'][current_year - 1][::-1]]
+        current_display.data['fwp'] = [sites[current_region]['data']['fwp'][current_year - 1][::-1]]
         cp_map.title.text = sites[current_region]['name']
 
-   
+        description.text = "<h2>Notes for area:</h2><p>"+ sites[current_region]['description'] + "</p>"
+
+    def toggle_threshold (event):
+
+        cp_threshold_toggle = current_display.data['cp_threshold_toggle'][0]
+        cp_threshold_toggle = not cp_threshold_toggle
+        current_display.data['cp_threshold_toggle'] = [cp_threshold_toggle]
+
+        current_region = current_display.data['region'][0]
+        current_year = current_display.data['current_year'][0]
+
+        predisp_toggle = current_display.data['predisp_toggle'][0]
+
+        multiplier = 1
+        if predisp_toggle: 
+            multiplier = sites[current_region]['predisp_model']
+
+        if cp_threshold_toggle:
+            # print('on',cp_threshold_toggle)
+            threshold_toggle.label="climate priming threshold on"
+            th_map = deepcopy(sites[current_region]['data']['cp'][current_year][::-1]) * multiplier
+            th_map[th_map >= cp_threshold] = 100 
+            th_map[th_map < cp_threshold] = -100
+            th_map[np.isinf(th_map)] = constants.CP_MIN - 10
+            current_display.data['cp'] = [th_map]
+        else:
+            # print('off',cp_threshold_toggle)
+            threshold_toggle.label="climate priming threshold off"
+            # print(current_region, current_year)
+            map_ = sites[current_region]['data']['cp'][current_year][::-1] * multiplier
+            map_[np.isinf(map_)] = constants.CP_MIN - 10
+            current_display.data['cp'] = [map_]
+
+    def change_threshold_value(attrname, old, new):
+
+        cp_threshold = new
+        current_display.data['cp_threshold'] = [cp_threshold]
+
+        current_region = current_display.data['region'][0]
+        current_year = current_display.data['current_year'][0]
+
+        cp_threshold_toggle = current_display.data['cp_threshold_toggle'][0]
+
+        predisp_toggle = current_display.data['predisp_toggle'][0]
+
+        multiplier = 1
+        if predisp_toggle: 
+            multiplier = sites[current_region]['predisp_model']
+
+        if cp_threshold_toggle:
+            # print(cp_threshold)
+            th_map = deepcopy(sites[current_region]['data']['cp'][current_year][::-1]) * multiplier
+            th_map[th_map >= cp_threshold] = 100 
+            th_map[th_map < cp_threshold] = -100
+            th_map[np.isinf(th_map)] = constants.CP_MIN - 10
+            current_display.data['cp'] = [th_map]
+        else:
+            map_ = sites[current_region]['data']['cp'][current_year][::-1] * multiplier
+            map_[np.isinf(map_)] = constants.CP_MIN - 10
+            current_display.data['cp'] = [map_]
+
+        # current_display.data['cp_vals'] = [sites[current_region]['data']['cp'][current_year][::-1]]
+
+    def toggle_predisp(event): 
+        predisp_toggle = current_display.data['predisp_toggle'][0]
+        predisp_toggle = not predisp_toggle
+        current_display.data['predisp_toggle'] = [predisp_toggle]
+
+        current_region = current_display.data['region'][0]
+        current_year = current_display.data['current_year'][0]
+        cp_threshold_toggle = current_display.data['cp_threshold_toggle'][0]
+
+        multiplier = 1
+        if predisp_toggle: 
+            multiplier = sites[current_region]['predisp_model']
+            predisp_toggle_button.label="predisposition model overlay on"
+        else:
+            predisp_toggle_button.label="predisposition model overlay off"
+            
+
+
+        if cp_threshold_toggle:
+            # print(cp_threshold)
+            th_map = deepcopy(sites[current_region]['data']['cp'][current_year][::-1]) * multiplier
+            th_map[th_map >= cp_threshold] = 100 
+            th_map[th_map < cp_threshold] = -100
+            th_map[np.isinf(th_map)] = constants.CP_MIN - 10
+            current_display.data['cp'] = [th_map] 
+        else:
+            map_ = sites[current_region]['data']['cp'][current_year][::-1] * multiplier
+            map_[np.isinf(map_)] = constants.CP_MIN - 10
+            # print(map_)
+            current_display.data['cp'] = [map_]
+            
+        current_display.data['cp_vals'] = [sites[current_region]['data']['cp'][current_year][::-1] * multiplier ] 
+        
 
        
     year_slider.on_change('value_throttled', change_display_year)
     region_dropdown.on_click(change_region)
+    threshold_toggle.on_click(toggle_threshold)
+    threshold_slider.on_change('value_throttled', change_threshold_value)
+    predisp_toggle_button.on_click(toggle_predisp)
 
-    inputs = column([region_dropdown, year_slider])
+    inputs = column([region_dropdown, year_slider, predisp_toggle_button, threshold_toggle,threshold_slider])
 
     title = Div(text="<H1>CLIMATE PRIMING EXPLORER<H1>", width=1000)
     from copy import deepcopy
@@ -221,11 +384,13 @@ def app():
     precip_row = row( [Spacer(width=100, height = 100), ewp_map, fwp_map])
     met_col = column(dd_row, precip_row)
 
+    
+
     curdoc().add_root(
         layout([
             [title],
             [inputs, cp_map, hidden_plot, met_col  ] ,
-            [average_plot]
+            [average_plot, description]
         ]) 
         
     )
