@@ -126,5 +126,5 @@ def create_area_average_data(multigrid):
     average = []
     for yr in range(multigrid.config['num_timesteps']):
         # print(multigrid.grids[yr])
-        average.append(np.nanmax(multigrid.grids[yr]))
+        average.append(np.nanmean(multigrid.grids[yr]))
     return average
