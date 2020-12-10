@@ -5,7 +5,7 @@ import constants,colors
 
 from bokeh.models import LinearColorMapper, ColorBar
 
-
+from bokeh.events import Tap
 
 def create_cp_map(data):
     TOOLTIPS = [
@@ -25,6 +25,7 @@ def create_cp_map(data):
 
     p.toolbar.logo = None
     p.toolbar_location = None
+    # p.match_aspect = True
     p.x_range.range_padding = p.y_range.range_padding = 0
     # p.sizing_mode = 'scale_height'
     # must give a vector of image data for image parameter
@@ -36,6 +37,8 @@ def create_cp_map(data):
         low_color="gray"
     )
 
+
+
     p.image(
         image='cp', x=0, y=0, dw=10, dh=10, 
         color_mapper=cmapper,
@@ -46,6 +49,8 @@ def create_cp_map(data):
     p.xgrid.grid_line_color = None
     p.ygrid.grid_line_color = None
     p.axis.visible = False
+
+   
 
     return p
 
@@ -87,7 +92,7 @@ def create_met_map(data, met_name, offset, color, c_min, c_max):
     met_map.toolbar_location = None
     met_map.x_range.range_padding = met_map.y_range.range_padding = 0
 
-    color_bar = ColorBar(color_mapper=cmapper, border_line_color=None, location=(0,0), width=10)
+    color_bar = ColorBar(color_mapper=cmapper, name='cb', border_line_color=None, location=(0,0), width=10)
 
     met_map.add_layout(color_bar, 'right')
 
