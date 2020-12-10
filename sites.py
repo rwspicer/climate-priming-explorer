@@ -4,9 +4,12 @@ LOCATIONS = {
     "Utqiaġvik": {
         "geolocation": (70.9, -156),
         "name": "Utqiaġvik and Point Barrow",
-        "papers": [], 
+        "papers": [""], 
         "data": {},
-        "description": ""
+        "description": """
+            <p>BW start of degradation in early  1950s mostly stable by early 2000s  
+            (~90% IW studied stable) Kanesvskiy et al. (2017) </p>
+    """
     },
     "Prudhoe Bay": {
         "geolocation": (70.2288, -148.4186), ## location of Jorgenson et al. (2015)
@@ -34,6 +37,13 @@ LOCATIONS = {
             degradation thought to be due to warmer temperature in 1989 - 1998 
             --Jorgenson et al. (2003)
             """
+    },
+    "ACP": {
+        "geolocation": (70.25, -151.5), ## location of Jorgenson et al. (2015)
+        "name": "Arctic Coastal Plain",
+        "data": {},
+        "papers": [ ], 
+        "description": """"""
     }
 }
 
