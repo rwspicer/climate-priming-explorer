@@ -1,5 +1,19 @@
 # CHANGLOG
 
+## [0.3.0] 2020-12-10
+### Added 
+- added caching of multigrid views
+- ACP site
+- Toggle for viewing met as % difference from mean
+- met_filter function
+- display of "clicked" value on map
+- buttons for previous/next year
+
+### Updated
+- CP_MIN and CP_MAX are -50 and 50 respectively 
+- cp_map plot settings
+- Utqiagvik site metadata
+
 ## [0.2.0] 2020-12-02
 ### Added
 - climate priming threshold overlay
