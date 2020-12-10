@@ -18,6 +18,12 @@ path_dict = {
    "cp":  os.path.join(data_root, "V1/thermokarst/initiation-regions/ACP/v4/PDM-5var/without_predisp/", DATA_TYPE)
 }
 
+view_path = os.path.join(data_root, 'V1', 'cp-explorer-views')
+try: 
+    os.makedirs (view_path)
+except:
+    pass
+
 import tempfile
 tempfile.tempdir = os.path.join(data_root,'tmp')
 
@@ -52,18 +58,47 @@ def load_dataset(dataset_name, path, sites, start_timestep):
     
     # data_by_site = {}
     for site in sites:
-        sites[site]['data'][dataset_name] = full_data.zoom_to(
-            sites[site]['geolocation'], location_format="WGS84"
-        )
-        geo = transforms.from_wgs84(
-            sites[site]['geolocation'], pm_md['projection']
-        )
-        pixel = transforms.to_pixel(geo, full_data.config['raster_metadata']['transform']).astype(int)
-        pdm = raster.zoom_to(predisp_model, pixel) 
+        
+        if site == "ACP":
+            start_year = full_data.config['start_timestep']
+            print(start_year)
+            grid_shape = full_data.config['grid_shape']
+            full_data.config['mean'] = np.nanmean(full_data.grids[:1951-start_year],axis=0).reshape(grid_shape)
+            sites[site]['data'][dataset_name] = full_data
+            pdm = predisp_model
+
+
+        else:
+            current_vp = os.path.join(view_path, '%s-%s.yml' % (site, dataset_name))
+            try:
+                view = TemporalGrid(current_vp)
+            except FileNotFoundError as e: 
+                print (e)
+                view = full_data.zoom_to(
+                    sites[site]['geolocation'], location_format="WGS84"
+                )
+                start_year = view.config['start_timestep']
+                grid_shape = view.config['grid_shape']
+                # print(view.grids[:1951-start_year].mean(axis=0))
+                view.config['mean'] = np.nanmean(view.grids[:1951-start_year],axis=0).reshape(grid_shape)
+                # print(view.config['mean'])
+
+                
+                view.save(current_vp)
+
+            
+
+            sites[site]['data'][dataset_name] = view
+            geo = transforms.from_wgs84(
+                sites[site]['geolocation'], pm_md['projection']
+            )
+            pixel = transforms.to_pixel(geo, full_data.config['raster_metadata']['transform']).astype(int)
+            pdm = raster.zoom_to(predisp_model, pixel) 
+
         pdm[pdm<0] = -np.inf
         pdm = pdm / 100
 
-        sites[site]['predisp_model'] = pdm
+        sites[site]['predisp_model'] = pdm[::-1]
     return sites
 
 
@@ -74,6 +109,7 @@ def load_all(path_dict, sites, start_timestep=1901):
         sites = load_dataset(
             dataset , path_dict[dataset], sites, start_timestep
         )
+
     return sites
 
 GLOBAL_SITE_DATA = load_all(path_dict, LOCATIONS, 1901)
