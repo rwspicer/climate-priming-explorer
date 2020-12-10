@@ -3,8 +3,8 @@
 
 WIDTH = 200
 
-CP_MIN = -100
-CP_MAX = 100
+CP_MIN = -50
+CP_MAX = 50
 
 FDD_MIN = -5500
 FDD_MAX = -4000
