@@ -6,16 +6,20 @@ from spicebox import raster, transforms
 
 from sites import LOCATIONS
 
-data_root = '/Volumes/scarif/cp-explorer-data/'
+data_root = '/Users/rwspicer/Desktop/data'
 
 DATA_TYPE = "multigrid"
 
+REGION = 'ACP'
+
+
+
 path_dict = {
-   "ewp": os.path.join(data_root, 'V1/precipitation/early-winter/ACP/v2/', DATA_TYPE),
-   "fwp": os.path.join(data_root, 'V1/precipitation/full-winter/ACP/v2/', DATA_TYPE),
-   "tdd": os.path.join(data_root, "V1/degree-day/thawing/ACP/v2/", DATA_TYPE),
-   "fdd": os.path.join(data_root, "V1/degree-day/freezing/ACP/v3/", DATA_TYPE),
-   "cp":  os.path.join(data_root, "V1/thermokarst/initiation-regions/ACP/v4/PDM-5var/without_predisp/", DATA_TYPE)
+   "ewp": os.path.join(data_root, 'V1/precipitation/early-winter', REGION, 'v3/cru/', DATA_TYPE),
+   "fwp": os.path.join(data_root, 'V1/precipitation/full-winter', REGION, 'v3/cru/', DATA_TYPE),
+   "tdd": os.path.join(data_root, 'V1/degree-day/thawing', REGION, 'v4/cru/', DATA_TYPE),
+   "fdd": os.path.join(data_root, 'V1/degree-day/freezing', REGION, 'v4/cru/', DATA_TYPE),
+   "cp":  os.path.join(data_root, 'V1/thermokarst/initiation-regions', REGION, 'v5-d/PDM-5var/without_predisp/', DATA_TYPE)
 }
 
 view_path = os.path.join(data_root, 'V1', 'cp-explorer-views')
@@ -61,17 +65,19 @@ def load_dataset(dataset_name, path, sites, start_timestep):
         
         if site == "ACP":
             start_year = full_data.config['start_timestep']
-            print(start_year)
+
             grid_shape = full_data.config['grid_shape']
             full_data.config['mean'] = np.nanmean(full_data.grids[:1951-start_year],axis=0).reshape(grid_shape)
             sites[site]['data'][dataset_name] = full_data
             pdm = predisp_model
+            print 
 
 
         else:
             current_vp = os.path.join(view_path, '%s-%s.yml' % (site, dataset_name))
             try:
                 view = TemporalGrid(current_vp)
+                print('view loaded:', current_vp )
             except FileNotFoundError as e: 
                 print (e)
                 view = full_data.zoom_to(
@@ -148,6 +154,7 @@ def create_data(site_data, init_year = 1902):
     # print('e')
 
     data['current_year'] = [init_year]
+    data['current_average'] = [0]
     data['tdd_last'] = [site_data['data']['fdd'][init_year - 1][::-1]]
     data['tdd'] = [site_data['data']['fdd'][init_year][::-1]]
     data['fdd'] = [site_data['data']['fdd'][init_year - 1][::-1]]
