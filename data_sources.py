@@ -6,7 +6,7 @@ from spicebox import raster, transforms
 
 from sites import LOCATIONS
 
-data_root = '/Users/rwspicer/Desktop/data'
+data_root = '../../data'
 
 DATA_TYPE = "multigrid"
 
