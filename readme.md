@@ -1,11 +1,10 @@
 INSTALLATION
 ------------
 
-install numpy, matplotlib, gdal
-install spicebox
-install pyyaml
-install multigrids
-install bokeh
+install numpy, matplotlib, gdal, pyyaml, multigrids,  bokeh
+
+install spicebox (https://github.com/rwspicer/spicebox)
+
 
 
 RUNNING

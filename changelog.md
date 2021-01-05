@@ -1,5 +1,9 @@
 # CHANGLOG
 
+## [0.3.1] 2020-12-10
+### Changed
+- path to data in data_sources.py 
+
 ## [0.3.0] 2020-12-10
 ### Added 
 - added caching of multigrid views
