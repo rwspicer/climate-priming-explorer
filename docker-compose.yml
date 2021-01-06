@@ -1,0 +1,10 @@
+version: "3.9"  # optional since v1.27.0
+services:
+  app:
+    build: .
+    volumes:
+      # - ../spicebox:/app/spicebox
+      # - ../multigrids:/app/multigrids
+      - ../../data/V1/:/data/V1
+    ports:
+      - "8000:5006"

@@ -1,5 +1,9 @@
 # CHANGLOG
 
+## [0.4.0] 2021-01-06
+### Added
+- Docker support
+
 ## [0.3.1] 2020-12-10
 ### Changed
 - path to data in data_sources.py 
